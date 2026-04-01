@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.projeto.infrastructure.web.MoradorControllerIntegrationTest
--------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.104 s -- in com.projeto.infrastructure.web.MoradorControllerIntegrationTest

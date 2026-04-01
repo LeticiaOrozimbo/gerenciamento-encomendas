@@ -1,7 +1,0 @@
-# Perfil de desenvolvimento — sem RabbitMQ real
-# O EncomendaDevPublisher substitui o EncomendaStreamPublisher (apenas loga no console)
-# O NotificacaoConsumer e EncomendaStreamPublisher têm @Profile("!dev"), não são carregados aqui
-spring:
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
-
