@@ -1,0 +1,494 @@
+openapi: 3.0.3
+info:
+  title: API de Gerenciamento de Encomendas
+  description: >
+    API REST para gerenciamento de encomendas em condomínio.
+    Permite o cadastro e controle de moradores, registro de encomendas recebidas,
+    notificação e confirmação de retirada.
+  version: 1.0.0
+  contact:
+    name: Suporte
+servers:
+  - url: http://localhost:8080
+    description: Servidor local de desenvolvimento
+
+tags:
+  - name: Encomendas
+    description: Operações relacionadas ao ciclo de vida das encomendas
+  - name: Moradores
+    description: Operações relacionadas ao cadastro de moradores
+
+paths:
+
+  # ──────────────────────────────────────────────
+  #  ENCOMENDAS
+  # ──────────────────────────────────────────────
+
+  /encomendas:
+    get:
+      tags:
+        - Encomendas
+      summary: Listar todas as encomendas
+      description: Retorna a lista completa de encomendas registradas no sistema.
+      operationId: listarEncomendas
+      responses:
+        '200':
+          description: Lista de encomendas retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Encomenda'
+              example:
+                - id: 1
+                  nomeMorador: "João Silva"
+                  apartamento: "101"
+                  descricao: "Caixa Amazon"
+                  status: "RECEBIDA"
+                  notificacaoConfirmada: false
+                - id: 2
+                  nomeMorador: "Maria Souza"
+                  apartamento: "202"
+                  descricao: "Encomenda Mercado Livre"
+                  status: "RETIRADA"
+                  notificacaoConfirmada: true
+
+    post:
+      tags:
+        - Encomendas
+      summary: Registrar nova encomenda
+      description: >
+        Registra a chegada de uma nova encomenda no condomínio.
+        O status inicial é definido automaticamente como **RECEBIDA**.
+        Uma notificação é enviada ao morador via mensageria.
+      operationId: receberEncomenda
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EncomendaRequest'
+            example:
+              nomeMorador: "João Silva"
+              apartamento: "101"
+              descricao: "Caixa Amazon – pedido #12345"
+      responses:
+        '200':
+          description: Encomenda registrada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Encomenda'
+              example:
+                id: 1
+                nomeMorador: "João Silva"
+                apartamento: "101"
+                descricao: "Caixa Amazon – pedido #12345"
+                status: "RECEBIDA"
+                notificacaoConfirmada: false
+        '400':
+          description: Dados inválidos na requisição
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+
+  /encomendas/{id}:
+    get:
+      tags:
+        - Encomendas
+      summary: Buscar encomenda por ID
+      description: Retorna os detalhes de uma encomenda específica pelo seu identificador.
+      operationId: buscarEncomenda
+      parameters:
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Encomenda encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Encomenda'
+              example:
+                id: 1
+                nomeMorador: "João Silva"
+                apartamento: "101"
+                descricao: "Caixa Amazon"
+                status: "RECEBIDA"
+                notificacaoConfirmada: false
+        '404':
+          description: Encomenda não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+
+  /encomendas/{id}/retirar:
+    put:
+      tags:
+        - Encomendas
+      summary: Registrar retirada da encomenda
+      description: >
+        Atualiza o status da encomenda para **RETIRADA**, indicando que o morador
+        já recolheu o pacote na portaria.
+      operationId: retirarEncomenda
+      parameters:
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Encomenda marcada como retirada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Encomenda'
+              example:
+                id: 1
+                nomeMorador: "João Silva"
+                apartamento: "101"
+                descricao: "Caixa Amazon"
+                status: "RETIRADA"
+                notificacaoConfirmada: true
+        '404':
+          description: Encomenda não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+
+  /encomendas/{id}/confirmar-notificacao:
+    put:
+      tags:
+        - Encomendas
+      summary: Confirmar notificação da encomenda
+      description: >
+        Registra a confirmação de que a notificação enviada ao morador foi
+        recebida/processada com sucesso. Define `notificacaoConfirmada` como `true`.
+      operationId: confirmarNotificacao
+      parameters:
+        - $ref: '#/components/parameters/PathId'
+      responses:
+        '200':
+          description: Notificação confirmada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Encomenda'
+              example:
+                id: 1
+                nomeMorador: "João Silva"
+                apartamento: "101"
+                descricao: "Caixa Amazon"
+                status: "NOTIFICADA"
+                notificacaoConfirmada: true
+        '404':
+          description: Encomenda não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+
+  # ──────────────────────────────────────────────
+  #  MORADORES
+  # ──────────────────────────────────────────────
+
+  /moradores:
+    get:
+      tags:
+        - Moradores
+      summary: Listar todos os moradores
+      description: Retorna a lista completa de moradores cadastrados no condomínio.
+      operationId: listarMoradores
+      responses:
+        '200':
+          description: Lista de moradores retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Morador'
+              example:
+                - id: 1
+                  nome: "João Silva"
+                  telefone: "11999990001"
+                  apartamento: "101"
+                - id: 2
+                  nome: "Maria Souza"
+                  telefone: "11999990002"
+                  apartamento: "202"
+
+    post:
+      tags:
+        - Moradores
+      summary: Cadastrar novo morador
+      description: Cadastra um novo morador no sistema. O apartamento deve ser único.
+      operationId: cadastrarMorador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoradorRequest'
+            example:
+              nome: "João Silva"
+              telefone: "11999990001"
+              apartamento: "101"
+      responses:
+        '200':
+          description: Morador cadastrado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Morador'
+              example:
+                id: 1
+                nome: "João Silva"
+                telefone: "11999990001"
+                apartamento: "101"
+        '400':
+          description: Dados inválidos ou apartamento já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+
+  /moradores/{id}:
+    put:
+      tags:
+        - Moradores
+      summary: Atualizar dados do morador
+      description: Atualiza as informações cadastrais de um morador existente.
+      operationId: atualizarMorador
+      parameters:
+        - $ref: '#/components/parameters/PathId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoradorRequest'
+            example:
+              nome: "João Silva Atualizado"
+              telefone: "11988880001"
+              apartamento: "101"
+      responses:
+        '200':
+          description: Morador atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Morador'
+              example:
+                id: 1
+                nome: "João Silva Atualizado"
+                telefone: "11988880001"
+                apartamento: "101"
+        '404':
+          description: Morador não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+
+  /moradores/apartamento/{apt}:
+    get:
+      tags:
+        - Moradores
+      summary: Buscar morador por apartamento
+      description: Retorna os dados do morador associado ao número de apartamento informado.
+      operationId: buscarPorApartamento
+      parameters:
+        - name: apt
+          in: path
+          required: true
+          description: Numero do apartamento
+          schema:
+            type: string
+          example: "101"
+      responses:
+        '200':
+          description: Morador encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Morador'
+              example:
+                id: 1
+                nome: "João Silva"
+                telefone: "11999990001"
+                apartamento: "101"
+        '404':
+          description: Morador não encontrado para o apartamento informado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+
+# ──────────────────────────────────────────────
+#  COMPONENTS
+# ──────────────────────────────────────────────
+
+components:
+
+  parameters:
+    PathId:
+      name: id
+      in: path
+      required: true
+      description: Identificador único do recurso
+      schema:
+        type: integer
+        format: int64
+        example: 1
+
+  schemas:
+
+    # ── Encomenda (resposta completa) ──────────────
+    Encomenda:
+      type: object
+      description: Representa uma encomenda registrada no sistema
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador único gerado automaticamente
+          readOnly: true
+          example: 1
+        nomeMorador:
+          type: string
+          description: Nome do morador destinatário
+          example: "João Silva"
+        apartamento:
+          type: string
+          description: Número do apartamento do destinatário
+          example: "101"
+        descricao:
+          type: string
+          description: Descrição do pacote ou encomenda
+          example: "Caixa Amazon – pedido #12345"
+        status:
+          $ref: '#/components/schemas/StatusEncomenda'
+        notificacaoConfirmada:
+          type: boolean
+          description: Indica se a notificação ao morador foi confirmada
+          example: false
+      required:
+        - nomeMorador
+        - apartamento
+        - descricao
+        - status
+
+    # ── Encomenda (corpo da requisição) ───────────
+    EncomendaRequest:
+      type: object
+      description: Dados necessários para registrar uma nova encomenda
+      properties:
+        nomeMorador:
+          type: string
+          description: Nome do morador destinatário
+          example: "João Silva"
+        apartamento:
+          type: string
+          description: Número do apartamento do destinatário
+          example: "101"
+        descricao:
+          type: string
+          description: Descrição do pacote ou encomenda
+          example: "Caixa Amazon – pedido #12345"
+      required:
+        - nomeMorador
+        - apartamento
+        - descricao
+
+    # ── Status da Encomenda ────────────────────────
+    StatusEncomenda:
+      type: string
+      description: >
+        Status do ciclo de vida da encomenda:
+        - **RECEBIDA** – encomenda chegou à portaria
+        - **NOTIFICADA** – morador foi notificado
+        - **RETIRADA** – morador retirou a encomenda
+      enum:
+        - RECEBIDA
+        - NOTIFICADA
+        - RETIRADA
+      example: RECEBIDA
+
+    # ── Morador (resposta completa) ────────────────
+    Morador:
+      type: object
+      description: Representa um morador cadastrado no condomínio
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador único gerado automaticamente
+          readOnly: true
+          example: 1
+        nome:
+          type: string
+          description: Nome completo do morador
+          example: "João Silva"
+        telefone:
+          type: string
+          description: Telefone de contato do morador
+          example: "11999990001"
+        apartamento:
+          type: string
+          description: Número do apartamento (único no sistema)
+          example: "101"
+      required:
+        - nome
+        - telefone
+        - apartamento
+
+    # ── Morador (corpo da requisição) ─────────────
+    MoradorRequest:
+      type: object
+      description: Dados necessários para cadastrar ou atualizar um morador
+      properties:
+        nome:
+          type: string
+          description: Nome completo do morador
+          example: "João Silva"
+        telefone:
+          type: string
+          description: Telefone de contato do morador
+          example: "11999990001"
+        apartamento:
+          type: string
+          description: Número do apartamento (deve ser único)
+          example: "101"
+      required:
+        - nome
+        - telefone
+        - apartamento
+
+    # ── Resposta de erro ──────────────────────────
+    ErroResponse:
+      type: object
+      description: Estrutura padrão de resposta para erros
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Momento em que o erro ocorreu
+          example: "2026-04-01T10:30:00Z"
+        status:
+          type: integer
+          description: Código HTTP do erro
+          example: 404
+        error:
+          type: string
+          description: Tipo do erro HTTP
+          example: "Not Found"
+        message:
+          type: string
+          description: Mensagem descritiva do erro
+          example: "Encomenda não encontrada com id: 1"
+        path:
+          type: string
+          description: Caminho da requisição que gerou o erro
+          example: "/encomendas/1"
+
