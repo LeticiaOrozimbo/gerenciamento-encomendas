@@ -1,0 +1,28 @@
+# Perfil de produção — com RabbitMQ real (Docker Compose)
+spring:
+  cloud:
+    stream:
+      function:
+        definition: notificacoesMoradores
+      bindings:
+        encomendas-recebidas:
+          destination: encomendas-recebidas
+          content-type: application/json
+        notificacoesMoradores-in-0:
+          destination: notificacoes-moradores
+          content-type: application/json
+      rabbit:
+        bindings:
+          encomendas-recebidas:
+            producer:
+              routing-key-expression: "'encomendas'"
+          notificacoesMoradores-in-0:
+            consumer:
+              binding-routing-key: encomendas
+
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:guest}
+    password: ${RABBIT_PASS:guest}
+
