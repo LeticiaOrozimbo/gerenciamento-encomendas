@@ -2,12 +2,14 @@ package com.projeto.application.morador;
 
 import com.projeto.domain.morador.Morador;
 import com.projeto.domain.morador.MoradorRepository;
+import com.projeto.infrastructure.persistence.UsuarioJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +24,10 @@ class MoradorServiceTest {
 
     @Mock
     private MoradorRepository moradorRepository;
+    @Mock
+    private UsuarioJpaRepository usuarioJpaRepository;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private MoradorService service;

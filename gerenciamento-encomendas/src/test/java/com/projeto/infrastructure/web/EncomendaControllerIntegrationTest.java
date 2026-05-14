@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -44,6 +45,7 @@ class EncomendaControllerIntegrationTest {
         e.setApartamento("202");
         e.setDescricao("Notebook Dell");
         mockMvc.perform(post("/encomendas")
+                .with(user("porteiro").roles("PORTEIRO"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(e)))
             .andExpect(status().isOk())
@@ -59,7 +61,8 @@ class EncomendaControllerIntegrationTest {
         e.setDescricao("Livro");
         e.setStatus(StatusEncomenda.NOTIFICADA);
         Encomenda salva = encomendaRepository.salvar(e);
-        mockMvc.perform(put("/encomendas/" + salva.getId() + "/retirar"))
+        mockMvc.perform(put("/encomendas/" + salva.getId() + "/retirar")
+                .with(user("porteiro").roles("PORTEIRO")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status", is("RETIRADA")));
     }
@@ -72,14 +75,16 @@ class EncomendaControllerIntegrationTest {
         e.setDescricao("Tenis");
         e.setStatus(StatusEncomenda.NOTIFICADA);
         Encomenda salva = encomendaRepository.salvar(e);
-        mockMvc.perform(put("/encomendas/" + salva.getId() + "/confirmar-notificacao"))
+        mockMvc.perform(put("/encomendas/" + salva.getId() + "/confirmar-notificacao")
+                .with(user("morador").roles("MORADOR")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.notificacaoConfirmada", is(true)));
     }
 
     @Test
     void deveListarEncomendas() throws Exception {
-        mockMvc.perform(get("/encomendas"))
+        mockMvc.perform(get("/encomendas")
+                .with(user("porteiro").roles("PORTEIRO")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", isA(java.util.List.class)));
     }
@@ -91,6 +96,7 @@ class EncomendaControllerIntegrationTest {
         e.setApartamento("999");
         e.setDescricao("Pacote");
         mockMvc.perform(post("/encomendas")
+                .with(user("porteiro").roles("PORTEIRO"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(e)))
             .andExpect(status().isBadRequest());

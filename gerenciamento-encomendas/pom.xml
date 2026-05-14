@@ -63,10 +63,40 @@
       <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
     </dependency>
 
+    <!-- Spring Security -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- JJWT -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>0.11.5</version>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>0.11.5</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>0.11.5</version>
+      <scope>runtime</scope>
+    </dependency>
+
     <!-- Testes -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -88,6 +118,26 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <!-- Geração de Javadoc: execute com 'mvn javadoc:javadoc' -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.6.3</version>
+        <configuration>
+          <outputDirectory>${project.build.directory}/site/apidocs</outputDirectory>
+          <reportOutputDirectory>${project.build.directory}/site/apidocs</reportOutputDirectory>
+          <charset>UTF-8</charset>
+          <encoding>UTF-8</encoding>
+          <docencoding>UTF-8</docencoding>
+          <windowtitle>API Gerenciamento de Encomendas</windowtitle>
+          <doctitle>Sistema de Gerenciamento de Encomendas — Javadoc</doctitle>
+          <author>true</author>
+          <version>true</version>
+          <use>true</use>
+          <failOnError>false</failOnError>
+          <doclint>none</doclint>
+        </configuration>
       </plugin>
     </plugins>
   </build>

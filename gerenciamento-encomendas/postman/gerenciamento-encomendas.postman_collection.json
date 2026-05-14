@@ -1,477 +1,518 @@
-{
+﻿{
   "info": {
-    "name": "Gerenciamento de Encomendas",
-    "description": "Collection completa para testar o fluxo do sistema de gerenciamento de encomendas para prédios residenciais.",
+    "name": "Gerenciamento de Encomendas v2",
+    "description": "Collection completa JWT.\n\nIMPORTANTE: Execute pasta 0 (Setup) primeiro — os tokens sao salvos automaticamente.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:8080",
-      "type": "string"
-    },
-    {
-      "key": "moradorId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "encomendaId",
-      "value": "",
-      "type": "string"
-    }
+    { "key": "baseUrl",           "value": "http://localhost:8080", "type": "string" },
+    { "key": "tokenPorteiro",     "value": "", "type": "string" },
+    { "key": "tokenMorador",      "value": "", "type": "string" },
+    { "key": "moradorId",         "value": "", "type": "string" },
+    { "key": "funcionarioId",     "value": "", "type": "string" },
+    { "key": "encomendaId",       "value": "", "type": "string" },
+    { "key": "tempFuncionarioId", "value": "", "type": "string" }
   ],
   "item": [
+    {
+      "name": "0. Setup - Cadastro e Login (execute primeiro)",
+      "item": [
+        {
+          "name": "0.1 Cadastrar Porteiro (publico)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "var json = pm.response.json();",
+            "pm.collectionVariables.set('funcionarioId', json.id);",
+            "pm.test('Login salvo', () => pm.expect(json.login).to.eql('porteiro.joao'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nome\": \"Porteiro Joao\",\n  \"login\": \"porteiro.joao\",\n  \"senha\": \"senha123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/funcionarios", "host": ["{{baseUrl}}"], "path": ["funcionarios"] }
+          }
+        },
+        {
+          "name": "0.2 Login Porteiro - salva tokenPorteiro",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "var json = pm.response.json();",
+            "pm.test('Token recebido', () => pm.expect(json.token).to.be.a('string').and.have.length.above(10));",
+            "pm.collectionVariables.set('tokenPorteiro', json.token);",
+            "console.log('tokenPorteiro salvo:', json.token.substring(0,30) + '...');"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"porteiro.joao\",\n  \"password\": \"senha123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "0.3 Cadastrar Morador com Login (publico)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "var json = pm.response.json();",
+            "pm.collectionVariables.set('moradorId', json.id);",
+            "pm.test('Apartamento 101', () => pm.expect(json.apartamento).to.eql('101'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nome\": \"Joao Silva\",\n  \"telefone\": \"11999990000\",\n  \"apartamento\": \"101\",\n  \"login\": \"joao.silva\",\n  \"senha\": \"morador123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/moradores", "host": ["{{baseUrl}}"], "path": ["moradores"] }
+          }
+        },
+        {
+          "name": "0.4 Login Morador - salva tokenMorador",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "var json = pm.response.json();",
+            "pm.test('Token recebido', () => pm.expect(json.token).to.be.a('string').and.have.length.above(10));",
+            "pm.collectionVariables.set('tokenMorador', json.token);",
+            "console.log('tokenMorador salvo:', json.token.substring(0,30) + '...');"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"joao.silva\",\n  \"password\": \"morador123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "0.5 Login Invalido (espera 401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 401', () => pm.response.to.have.status(401));",
+            "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().erro).to.include('nvalidas'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"nao.existe\",\n  \"password\": \"senhaerrada\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        }
+      ]
+    },
     {
       "name": "1. Moradores",
       "item": [
         {
-          "name": "1.1 Cadastrar Morador",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "pm.collectionVariables.set('moradorId', json.id);",
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Morador criado com apartamento correto', () => {",
-                  "    pm.expect(json.apartamento).to.eql('101');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "1.1 Cadastrar Morador sem Login (publico)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Apartamento 202', () => pm.expect(pm.response.json().apartamento).to.eql('202'));"
+          ]}}],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nome\": \"João Silva\",\n  \"telefone\": \"11999990000\",\n  \"apartamento\": \"101\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/moradores",
-              "host": ["{{baseUrl}}"],
-              "path": ["moradores"]
-            },
-            "description": "Cadastra um novo morador. Salva o ID retornado na variável `moradorId`."
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nome\": \"Maria Souza\",\n  \"telefone\": \"11988880000\",\n  \"apartamento\": \"202\"\n}" },
+            "url": { "raw": "{{baseUrl}}/moradores", "host": ["{{baseUrl}}"], "path": ["moradores"] }
           }
         },
         {
-          "name": "1.2 Listar Moradores",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Retorna lista', () => {",
-                  "    pm.expect(pm.response.json()).to.be.an('array');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "1.2 Listar Moradores (Bearer tokenPorteiro)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Array nao vazio', () => pm.expect(pm.response.json().length).to.be.at.least(1));"
+          ]}}],
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/moradores",
-              "host": ["{{baseUrl}}"],
-              "path": ["moradores"]
-            },
-            "description": "Lista todos os moradores cadastrados."
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/moradores", "host": ["{{baseUrl}}"], "path": ["moradores"] }
           }
         },
         {
           "name": "1.3 Buscar Morador por Apartamento",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Apartamento correto', () => {",
-                  "    pm.expect(pm.response.json().apartamento).to.eql('101');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Apartamento 101', () => pm.expect(pm.response.json().apartamento).to.eql('101'));"
+          ]}}],
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/moradores/apartamento/101",
-              "host": ["{{baseUrl}}"],
-              "path": ["moradores", "apartamento", "101"]
-            },
-            "description": "Busca um morador pelo número do apartamento."
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/moradores/apartamento/101", "host": ["{{baseUrl}}"], "path": ["moradores", "apartamento", "101"] }
           }
         },
         {
-          "name": "1.4 Atualizar Morador",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Telefone atualizado', () => {",
-                  "    pm.expect(pm.response.json().telefone).to.eql('11888880000');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "1.4 Atualizar Morador (Bearer tokenMorador)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Telefone atualizado', () => pm.expect(pm.response.json().telefone).to.eql('11777770000'));"
+          ]}}],
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenMorador}}" }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nome\": \"João Silva Atualizado\",\n  \"telefone\": \"11888880000\",\n  \"apartamento\": \"101\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/moradores/{{moradorId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["moradores", "{{moradorId}}"]
-            },
-            "description": "Atualiza nome, telefone e apartamento do morador. Usa o `moradorId` salvo no passo 1.1."
+            "body": { "mode": "raw", "raw": "{\n  \"nome\": \"Joao Silva Atualizado\",\n  \"telefone\": \"11777770000\",\n  \"apartamento\": \"101\"\n}" },
+            "url": { "raw": "{{baseUrl}}/moradores/{{moradorId}}", "host": ["{{baseUrl}}"], "path": ["moradores", "{{moradorId}}"] }
           }
         },
         {
-          "name": "1.5 Buscar Morador Inexistente (erro esperado)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
-                  "pm.test('Mensagem de erro presente', () => {",
-                  "    pm.expect(pm.response.json().erro).to.include('Morador não encontrado');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "1.5 Apartamento Inexistente (espera 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));",
+            "pm.test('Mensagem de erro', () => pm.expect(pm.response.json().erro).to.include('Morador nao encontrado'));"
+          ]}}],
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/moradores/apartamento/999",
-              "host": ["{{baseUrl}}"],
-              "path": ["moradores", "apartamento", "999"]
-            },
-            "description": "Testa o tratamento de erro ao buscar apartamento inexistente. Esperado: 400 Bad Request."
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/moradores/apartamento/999", "host": ["{{baseUrl}}"], "path": ["moradores", "apartamento", "999"] }
+          }
+        },
+        {
+          "name": "1.6 Sem Token (espera 401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401 sem token', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/moradores", "host": ["{{baseUrl}}"], "path": ["moradores"] }
           }
         }
       ]
     },
     {
-      "name": "2. Encomendas",
+      "name": "2. Funcionarios",
       "item": [
         {
-          "name": "2.1 Registrar Encomenda (porteiro recebe)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "pm.collectionVariables.set('encomendaId', json.id);",
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Status RECEBIDA', () => {",
-                  "    pm.expect(json.status).to.eql('RECEBIDA');",
-                  "});",
-                  "pm.test('Notificacao nao confirmada', () => {",
-                  "    pm.expect(json.notificacaoConfirmada).to.eql(false);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nomeMorador\": \"João Silva\",\n  \"apartamento\": \"101\",\n  \"descricao\": \"Caixa Amazon - Notebook Dell\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/encomendas",
-              "host": ["{{baseUrl}}"],
-              "path": ["encomendas"]
-            },
-            "description": "Porteiro registra o recebimento de uma encomenda. O sistema salva com status RECEBIDA e publica no canal de mensageria. Salva o `encomendaId` retornado."
-          }
-        },
-        {
-          "name": "2.2 Listar Encomendas",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Retorna lista', () => {",
-                  "    pm.expect(pm.response.json()).to.be.an('array');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "2.1 Listar Funcionarios",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Array nao vazio', () => pm.expect(pm.response.json().length).to.be.at.least(1));"
+          ]}}],
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/encomendas",
-              "host": ["{{baseUrl}}"],
-              "path": ["encomendas"]
-            },
-            "description": "Lista todas as encomendas registradas."
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/funcionarios", "host": ["{{baseUrl}}"], "path": ["funcionarios"] }
           }
         },
         {
-          "name": "2.3 Buscar Encomenda por ID",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('ID correto', () => {",
-                  "    pm.expect(String(pm.response.json().id)).to.eql(pm.collectionVariables.get('encomendaId').toString());",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "2.2 Buscar Funcionario por ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('ID confere', () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get('funcionarioId'))));"
+          ]}}],
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/encomendas/{{encomendaId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["encomendas", "{{encomendaId}}"]
-            },
-            "description": "Busca uma encomenda pelo ID. Usa o `encomendaId` salvo no passo 2.1."
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/funcionarios/{{funcionarioId}}", "host": ["{{baseUrl}}"], "path": ["funcionarios", "{{funcionarioId}}"] }
           }
         },
         {
-          "name": "2.4 Confirmar Notificação (morador confirma)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Notificacao confirmada', () => {",
-                  "    pm.expect(pm.response.json().notificacaoConfirmada).to.eql(true);",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "2.3 Atualizar Funcionario",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Nome atualizado', () => pm.expect(pm.response.json().nome).to.eql('Porteiro Joao Atualizado'));"
+          ]}}],
           "request": {
             "method": "PUT",
-            "url": {
-              "raw": "{{baseUrl}}/encomendas/{{encomendaId}}/confirmar-notificacao",
-              "host": ["{{baseUrl}}"],
-              "path": ["encomendas", "{{encomendaId}}", "confirmar-notificacao"]
-            },
-            "description": "Morador confirma o recebimento da notificação. O campo `notificacaoConfirmada` passa a ser `true`."
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"nome\": \"Porteiro Joao Atualizado\"\n}" },
+            "url": { "raw": "{{baseUrl}}/funcionarios/{{funcionarioId}}", "host": ["{{baseUrl}}"], "path": ["funcionarios", "{{funcionarioId}}"] }
           }
         },
         {
-          "name": "2.5 Retirar Encomenda (porteiro dá baixa)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Status RETIRADA', () => {",
-                  "    pm.expect(pm.response.json().status).to.eql('RETIRADA');",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "url": {
-              "raw": "{{baseUrl}}/encomendas/{{encomendaId}}/retirar",
-              "host": ["{{baseUrl}}"],
-              "path": ["encomendas", "{{encomendaId}}", "retirar"]
-            },
-            "description": "Porteiro registra a retirada da encomenda pelo morador. Status muda para RETIRADA."
-          }
-        },
-        {
-          "name": "2.6 Registrar Encomenda - Apartamento inexistente (erro esperado)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
-                  "pm.test('Mensagem de erro presente', () => {",
-                  "    pm.expect(pm.response.json().erro).to.include('Morador não cadastrado');",
-                  "});"
-                ]
-              }
-            }
-          ],
+          "name": "2.4 Cadastrar Funcionario Temporario",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('tempFuncionarioId', pm.response.json().id);"
+          ]}}],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nomeMorador\": \"Fulano\",\n  \"apartamento\": \"999\",\n  \"descricao\": \"Pacote teste\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/encomendas",
-              "host": ["{{baseUrl}}"],
-              "path": ["encomendas"]
-            },
-            "description": "Testa o erro ao registrar encomenda para apartamento não cadastrado. Esperado: 400 Bad Request."
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nome\": \"Porteiro Temporario\",\n  \"login\": \"porteiro.temp\",\n  \"senha\": \"temp123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/funcionarios", "host": ["{{baseUrl}}"], "path": ["funcionarios"] }
+          }
+        },
+        {
+          "name": "2.5 Deletar Funcionario Temporario",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/funcionarios/{{tempFuncionarioId}}", "host": ["{{baseUrl}}"], "path": ["funcionarios", "{{tempFuncionarioId}}"] }
+          }
+        },
+        {
+          "name": "2.6 ID Inexistente (espera 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/funcionarios/99999", "host": ["{{baseUrl}}"], "path": ["funcionarios", "99999"] }
           }
         }
       ]
     },
     {
-      "name": "3. Fluxo Completo (rode em ordem)",
+      "name": "3. Encomendas",
       "item": [
         {
-          "name": "3.1 Cadastrar Morador Maria",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.collectionVariables.set('moradorId', pm.response.json().id);",
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ],
+          "name": "3.1 Registrar Encomenda (PORTEIRO)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "var json = pm.response.json();",
+            "pm.collectionVariables.set('encomendaId', json.id);",
+            "pm.test('Status RECEBIDA', () => pm.expect(json.status).to.eql('RECEBIDA'));",
+            "pm.test('notificacaoConfirmada false', () => pm.expect(json.notificacaoConfirmada).to.eql(false));"
+          ]}}],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nome\": \"Maria Souza\",\n  \"telefone\": \"11977770000\",\n  \"apartamento\": \"202\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/moradores",
-              "host": ["{{baseUrl}}"],
-              "path": ["moradores"]
-            }
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"nomeMorador\": \"Joao Silva\",\n  \"apartamento\": \"101\",\n  \"descricao\": \"Caixa Amazon - Notebook Dell XPS\"\n}" },
+            "url": { "raw": "{{baseUrl}}/encomendas", "host": ["{{baseUrl}}"], "path": ["encomendas"] }
           }
         },
         {
-          "name": "3.2 Porteiro Registra Encomenda",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.collectionVariables.set('encomendaId', pm.response.json().id);",
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Status RECEBIDA', () => pm.expect(pm.response.json().status).to.eql('RECEBIDA'));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nomeMorador\": \"Maria Souza\",\n  \"apartamento\": \"202\",\n  \"descricao\": \"Sapato Nike - Caixa Azul\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/encomendas",
-              "host": ["{{baseUrl}}"],
-              "path": ["encomendas"]
-            }
-          }
-        },
-        {
-          "name": "3.3 Morador Confirma Notificacao",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Notificacao confirmada', () => pm.expect(pm.response.json().notificacaoConfirmada).to.eql(true));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "url": {
-              "raw": "{{baseUrl}}/encomendas/{{encomendaId}}/confirmar-notificacao",
-              "host": ["{{baseUrl}}"],
-              "path": ["encomendas", "{{encomendaId}}", "confirmar-notificacao"]
-            }
-          }
-        },
-        {
-          "name": "3.4 Porteiro Da Baixa na Retirada",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Status RETIRADA', () => pm.expect(pm.response.json().status).to.eql('RETIRADA'));",
-                  "pm.test('Notificacao ainda confirmada', () => pm.expect(pm.response.json().notificacaoConfirmada).to.eql(true));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "url": {
-              "raw": "{{baseUrl}}/encomendas/{{encomendaId}}/retirar",
-              "host": ["{{baseUrl}}"],
-              "path": ["encomendas", "{{encomendaId}}", "retirar"]
-            }
-          }
-        },
-        {
-          "name": "3.5 Verificar Estado Final da Encomenda",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Status final RETIRADA', () => pm.expect(json.status).to.eql('RETIRADA'));",
-                  "pm.test('Notificacao confirmada', () => pm.expect(json.notificacaoConfirmada).to.eql(true));",
-                  "pm.test('Apartamento 202', () => pm.expect(json.apartamento).to.eql('202'));"
-                ]
-              }
-            }
-          ],
+          "name": "3.2 Listar Encomendas",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Array nao vazio', () => pm.expect(pm.response.json().length).to.be.at.least(1));"
+          ]}}],
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/encomendas/{{encomendaId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["encomendas", "{{encomendaId}}"]
-            }
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/encomendas", "host": ["{{baseUrl}}"], "path": ["encomendas"] }
+          }
+        },
+        {
+          "name": "3.3 Buscar Encomenda por ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('ID confere', () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get('encomendaId'))));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/encomendas/{{encomendaId}}", "host": ["{{baseUrl}}"], "path": ["encomendas", "{{encomendaId}}"] }
+          }
+        },
+        {
+          "name": "3.4 Confirmar Notificacao (MORADOR)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('notificacaoConfirmada = true', () => pm.expect(pm.response.json().notificacaoConfirmada).to.eql(true));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenMorador}}" }],
+            "url": { "raw": "{{baseUrl}}/encomendas/{{encomendaId}}/confirmar-notificacao", "host": ["{{baseUrl}}"], "path": ["encomendas", "{{encomendaId}}", "confirmar-notificacao"] }
+          }
+        },
+        {
+          "name": "3.5 Retirar Encomenda (PORTEIRO)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Status RETIRADA', () => pm.expect(pm.response.json().status).to.eql('RETIRADA'));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/encomendas/{{encomendaId}}/retirar", "host": ["{{baseUrl}}"], "path": ["encomendas", "{{encomendaId}}", "retirar"] }
+          }
+        },
+        {
+          "name": "3.6 Apartamento Inexistente (espera 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"nomeMorador\": \"Desconhecido\",\n  \"apartamento\": \"999\",\n  \"descricao\": \"Pacote misterioso\"\n}" },
+            "url": { "raw": "{{baseUrl}}/encomendas", "host": ["{{baseUrl}}"], "path": ["encomendas"] }
+          }
+        },
+        {
+          "name": "3.7 Sem Token (espera 401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401 sem token', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nomeMorador\": \"Joao Silva\",\n  \"apartamento\": \"101\",\n  \"descricao\": \"Pacote\"\n}" },
+            "url": { "raw": "{{baseUrl}}/encomendas", "host": ["{{baseUrl}}"], "path": ["encomendas"] }
+          }
+        },
+        {
+          "name": "3.8 MORADOR tenta retirar (espera 403)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('403 para MORADOR em retirar', () => pm.response.to.have.status(403));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenMorador}}" }],
+            "url": { "raw": "{{baseUrl}}/encomendas/{{encomendaId}}/retirar", "host": ["{{baseUrl}}"], "path": ["encomendas", "{{encomendaId}}", "retirar"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Seguranca JWT",
+      "item": [
+        {
+          "name": "4.1 Token Malformado (espera 401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401 token invalido', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer token.invalido.aqui" }],
+            "url": { "raw": "{{baseUrl}}/moradores", "host": ["{{baseUrl}}"], "path": ["moradores"] }
+          }
+        },
+        {
+          "name": "4.2 Sem Prefixo Bearer (espera 401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401 sem prefixo Bearer', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "{{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/moradores", "host": ["{{baseUrl}}"], "path": ["moradores"] }
+          }
+        },
+        {
+          "name": "4.3 Sem Header (espera 401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401 sem header', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/funcionarios", "host": ["{{baseUrl}}"], "path": ["funcionarios"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Fluxo Completo - Execute em Ordem",
+      "item": [
+        {
+          "name": "5.1 Cadastrar Porteiro",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nome\": \"Porteiro Carlos\",\n  \"login\": \"porteiro.carlos\",\n  \"senha\": \"carlos123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/funcionarios", "host": ["{{baseUrl}}"], "path": ["funcionarios"] }
+          }
+        },
+        {
+          "name": "5.2 Login Porteiro",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('tokenPorteiro', pm.response.json().token);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"porteiro.carlos\",\n  \"password\": \"carlos123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "5.3 Cadastrar Morador Ana",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('moradorId', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nome\": \"Ana Lima\",\n  \"telefone\": \"11966660000\",\n  \"apartamento\": \"303\",\n  \"login\": \"ana.lima\",\n  \"senha\": \"ana123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/moradores", "host": ["{{baseUrl}}"], "path": ["moradores"] }
+          }
+        },
+        {
+          "name": "5.4 Login Morador Ana",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('tokenMorador', pm.response.json().token);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"ana.lima\",\n  \"password\": \"ana123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "5.5 Porteiro Recebe Encomenda",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('encomendaId', pm.response.json().id);",
+            "pm.test('Status RECEBIDA', () => pm.expect(pm.response.json().status).to.eql('RECEBIDA'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"nomeMorador\": \"Ana Lima\",\n  \"apartamento\": \"303\",\n  \"descricao\": \"Vestido Zara - Caixa Rosa\"\n}" },
+            "url": { "raw": "{{baseUrl}}/encomendas", "host": ["{{baseUrl}}"], "path": ["encomendas"] }
+          }
+        },
+        {
+          "name": "5.6 Ana Confirma Notificacao",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('notificacaoConfirmada = true', () => pm.expect(pm.response.json().notificacaoConfirmada).to.eql(true));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenMorador}}" }],
+            "url": { "raw": "{{baseUrl}}/encomendas/{{encomendaId}}/confirmar-notificacao", "host": ["{{baseUrl}}"], "path": ["encomendas", "{{encomendaId}}", "confirmar-notificacao"] }
+          }
+        },
+        {
+          "name": "5.7 Porteiro Da Baixa na Retirada",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Status RETIRADA', () => pm.expect(pm.response.json().status).to.eql('RETIRADA'));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/encomendas/{{encomendaId}}/retirar", "host": ["{{baseUrl}}"], "path": ["encomendas", "{{encomendaId}}", "retirar"] }
+          }
+        },
+        {
+          "name": "5.8 Verificar Estado Final",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "var json = pm.response.json();",
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Status final = RETIRADA', () => pm.expect(json.status).to.eql('RETIRADA'));",
+            "pm.test('notificacaoConfirmada = true', () => pm.expect(json.notificacaoConfirmada).to.eql(true));",
+            "pm.test('Apartamento = 303', () => pm.expect(json.apartamento).to.eql('303'));",
+            "console.log('Fluxo completo validado!');"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenPorteiro}}" }],
+            "url": { "raw": "{{baseUrl}}/encomendas/{{encomendaId}}", "host": ["{{baseUrl}}"], "path": ["encomendas", "{{encomendaId}}"] }
           }
         }
       ]
     }
   ]
 }
-

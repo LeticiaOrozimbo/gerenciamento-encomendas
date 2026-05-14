@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -59,6 +60,7 @@ class MoradorControllerIntegrationTest {
         salvo.setApartamento("304");
 
         mockMvc.perform(put("/moradores/" + salvo.getId())
+                .with(user("morador").roles("MORADOR"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(salvo)))
             .andExpect(status().isOk())
@@ -74,21 +76,24 @@ class MoradorControllerIntegrationTest {
         m.setApartamento("501");
         moradorRepository.salvar(m);
 
-        mockMvc.perform(get("/moradores/apartamento/501"))
+        mockMvc.perform(get("/moradores/apartamento/501")
+                .with(user("porteiro").roles("PORTEIRO")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.nome", is("Ana Lima")));
     }
 
     @Test
     void deveListarMoradores() throws Exception {
-        mockMvc.perform(get("/moradores"))
+        mockMvc.perform(get("/moradores")
+                .with(user("porteiro").roles("PORTEIRO")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", isA(java.util.List.class)));
     }
 
     @Test
     void deveRetornarErroBadRequestParaMoradorInexistente() throws Exception {
-        mockMvc.perform(get("/moradores/apartamento/999"))
+        mockMvc.perform(get("/moradores/apartamento/999")
+                .with(user("porteiro").roles("PORTEIRO")))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.erro", containsString("Morador não encontrado")));
     }

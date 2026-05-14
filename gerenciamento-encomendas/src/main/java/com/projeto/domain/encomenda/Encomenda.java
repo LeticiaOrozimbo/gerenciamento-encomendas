@@ -10,27 +10,45 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 
+/**
+ * Entidade de domínio que representa uma encomenda recebida na portaria do condomínio.
+ *
+ * <p>Ciclo de vida do status:
+ * <ol>
+ *   <li>{@link StatusEncomenda#RECEBIDA} – encomenda chegou na portaria</li>
+ *   <li>{@link StatusEncomenda#NOTIFICADA} – morador foi notificado</li>
+ *   <li>{@link StatusEncomenda#RETIRADA} – morador retirou o pacote</li>
+ * </ol>
+ *
+ * @author Equipe Projeto
+ */
 @Entity
 @Table(name = "encomendas")
 public class Encomenda {
 
+    /** Identificador único gerado automaticamente. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Nome completo do morador destinatário. */
     @Column(nullable = false)
     private String nomeMorador;
 
+    /** Número do apartamento do destinatário. */
     @Column(nullable = false)
     private String apartamento;
 
+    /** Descrição resumida do conteúdo ou remetente da encomenda. */
     @Column(nullable = false)
     private String descricao;
 
+    /** Estado atual da encomenda no fluxo de entrega. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusEncomenda status;
 
+    /** Indica se o morador confirmou o recebimento da notificação de chegada. */
     private boolean notificacaoConfirmada = false;
 
     public Long getId() { return id; }
